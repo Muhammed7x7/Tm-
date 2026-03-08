@@ -23,19 +23,19 @@ def ai_chat(user, prompt):
     }
 
     data = {
-        "model":"llama3-70b-8192",
-        "messages":messages
+        "model": "openai/gpt-oss-20b",  # Groq OpenAI-compatible model
+        "messages": messages
     }
 
     r = requests.post(url, headers=headers, json=data)
 
     if r.status_code != 200:
-        return r.text
+        return f"API Hatası ({r.status_code}): {r.text}"
 
     cevap = r.json()["choices"][0]["message"]["content"]
 
-    history.append({"role":"user","content":prompt})
-    history.append({"role":"assistant","content":cevap})
+    history.append({"role":"user","content": prompt})
+    history.append({"role":"assistant","content": cevap})
 
     memory[user] = history[-10:]
 
@@ -43,34 +43,23 @@ def ai_chat(user, prompt):
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    await update.message.reply_text(
-        "🤖 AI Bot hazır!\n\n"
-        "Mesaj yaz bana."
-    )
+    await update.message.reply_text("🤖 AI Bot hazır! /reset ile hafızayı temizleyebilirsin.")
 
 
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     uid = update.message.from_user.id
-
     if uid in memory:
         del memory[uid]
-
     await update.message.reply_text("Memory temizlendi 🧠")
 
 
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     user = update.message.from_user.id
-
     if user != OWNER:
         return
 
     msg = update.message.text
-
     await update.message.reply_text("🤔 düşünüyorum...")
-
     cevap = ai_chat(user, msg)
 
     if len(cevap) > 4000:
